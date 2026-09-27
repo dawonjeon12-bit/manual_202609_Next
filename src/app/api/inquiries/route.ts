@@ -17,8 +17,12 @@ export async function POST(req: Request) {
 
   const rec: InquiryRecord = { ...data, id: newInquiryId(), createdAt: Date.now() };
 
+  // DB 를 아직 연결하지 않았으면 저장은 건너뛰고 메일만 보낸다
+  const hasDb = !!process.env.DATABASE_URL;
+  if (!hasDb) console.warn('[inquiry] DATABASE_URL 이 없어 저장하지 않고 메일만 보냅니다', rec.id);
+
   let saved = false;
-  try {
+  if (hasDb) try {
     await prisma.inquiry.create({
       data: {
         id: rec.id, plan: rec.plan, company: rec.company, name: rec.name, jobTitle: rec.title,

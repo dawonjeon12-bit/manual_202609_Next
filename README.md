@@ -19,8 +19,7 @@ npm run dev
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | ✓ | Google OAuth. 리디렉션 URI: `<도메인>/api/auth/callback/google` |
 | `ANTHROPIC_API_KEY` | ✓ | 서버에서만 읽는다. 없으면 AI 버튼이 ‘사용할 수 없음’으로 바뀐다 |
 | `ANTHROPIC_MODEL` | | 기본 `claude-opus-5`. 비용을 낮추려면 `claude-sonnet-5` |
-| `RESEND_API_KEY` / `MAIL_FROM` | | 없으면 문의는 저장만 하고, 완료 화면의 mailto 폴백으로 전달한다 |
-| `INQUIRY_TO` | | 문의 수신 주소 |
+| `RESEND_API_KEY` | | 도입 문의를 `dawonjeon12@gmail.com` 으로 발송. 없으면 저장만 하고 완료 화면의 mailto 폴백으로 전달한다 |
 | `ADMIN_EMAILS` | | 쉼표 구분. 이 주소로 로그인하면 `/admin/inquiries` 열람 가능 |
 | `SITE_URL` | | 메타데이터·sitemap 의 절대 주소 |
 
@@ -33,29 +32,31 @@ npm run dev
 ## 구조
 
 ```
-app/(site)/…          마케팅 6페이지, 도입 문의, 로그인, 관리자 문의함 (내비·푸터 있음)
-app/editor/…          작업 화면 (전체 화면). /editor 는 가장 최근 문서로 이동
-app/api/manuals       문서 CRUD — 모든 쿼리를 userId 로 한정
-app/api/ai/*          outline · section · refine · review (maxDuration 300)
-app/api/inquiries     문의 제출(허니팟→저장→메일) / 관리자 목록
-lib/markdown.ts       renderMarkdown() 이식본
-lib/prompts.ts        프롬프트 원문 (FORMAT_RULES 포함) — 문구 수정 금지
-lib/export.ts         toMarkdown() toHTML() + 브라우저 다운로드
-styles/               tokens · typography · site · editor (원본 CSS 를 줄 단위로 옮김)
+src/app/(site)/…          마케팅 6페이지, 도입 문의, 로그인, 관리자 문의함 (내비·푸터 있음)
+src/app/editor/…          작업 화면 (전체 화면). /editor 는 가장 최근 문서로 이동
+src/app/api/manuals       문서 CRUD — 모든 쿼리를 userId 로 한정
+src/app/api/ai/*          outline · section · refine · review (maxDuration 300)
+src/app/api/inquiries     문의 제출(허니팟→저장→메일) / 관리자 목록
+src/lib/markdown.ts       renderMarkdown() 이식본
+src/lib/prompts.ts        프롬프트 원문 (FORMAT_RULES 포함) — 문구 수정 금지
+src/lib/export.ts         toMarkdown() toHTML() + 브라우저 다운로드
+src/styles/               tokens · typography · site · editor (원본 CSS 를 줄 단위로 옮김)
+prisma/ tests/ scripts/  DB 스키마·마이그레이션, 원본 대조 테스트, 스냅샷 생성 스크립트 (src 밖)
 ```
 
 ## AI 호출
 
 - 모델 `claude-opus-5`, `thinking: adaptive`. 검수는 `effort: high`.
 - 목차·검수는 구조화 출력(Zod 스키마), 섹션·다듬기는 `text/plain` 스트리밍.
-  스트림이 끝난 뒤 문제가 있으면 본문 뒤에 `\u0000<오류코드>` 를 붙인다 (`lib/ai-errors.ts`).
+  스트림이 끝난 뒤 문제가 있으면 본문 뒤에 `\u0000<오류코드>` 를 붙인다 (`src/lib/ai-errors.ts`).
 - 섹션 프롬프트의 앞부분(브리프·전체 목차)에 prompt caching — ‘전체 초안’에서 섹션마다 반복되는 입력.
 - 안전 분류기 거절에 대비해 `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`)를 켜 두었다.
 - 중단 버튼 → `AbortController` → 요청 `signal` → SDK 요청 취소 (과금 중단).
-- 플랜별 월 호출 상한: `lib/plans.ts` (무료 60 · 팀 1,500 · 엔터프라이즈 무제한). 상한은 `AiUsage` 테이블에 기록.
+- 플랜별 월 호출 상한: `src/lib/plans.ts` (무료 60 · 팀 1,500 · 엔터프라이즈 무제한). 상한은 `AiUsage` 테이블에 기록.
 
 ## 배포 (Vercel)
 
 - AI 라우트는 `maxDuration = 300` — **Pro 플랜 이상**이 필요하다 (plan §7).
 - 빌드 명령은 기본값(`npm run build`)이 `prisma generate` 를 포함한다. 마이그레이션은 배포 전 `npm run db:deploy`.
-- Resend에서 발신 도메인을 인증한 뒤 `MAIL_FROM` 을 그 도메인 주소로.
+- 메일 발신자는 Resend 기본 주소 `onboarding@resend.dev` — Resend 계정 소유자 메일로만 보낼 수 있다.
+  수신 주소(`dawonjeon12@gmail.com`)가 Resend 가입 메일과 같아야 하며, 도메인을 인증하면 `src/lib/mail.ts` 의 `FROM` 을 바꾼다.

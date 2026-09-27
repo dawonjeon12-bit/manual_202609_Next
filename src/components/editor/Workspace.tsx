@@ -10,6 +10,7 @@ import { ERR } from '@/lib/ai-errors';
 import { downloadFile, safeName, toHTML, toMarkdown } from '@/lib/export';
 import { SEC_TYPES, uid, type Brief, type Manual, type ManualSummary, type RefineId, type Section } from '@/lib/manual';
 import { AiPanel, type Tab } from './AiPanel';
+import { useConfirm } from './ConfirmModal';
 import { DocHead } from './DocHead';
 import type { Finding } from './Findings';
 import { SectionList, type Mode } from './SectionList';
@@ -82,6 +83,7 @@ export function Workspace({ initialDocs, initialManual, flash }: {
   const titleRef = useRef<HTMLInputElement>(null);
   const topicRef = useRef<HTMLTextAreaElement>(null);
   const stageRef = useRef<HTMLElement>(null);
+  const [confirm, confirmModal] = useConfirm();
 
   const toast = useCallback((msg: string) => {
     setToastMsg(msg);
@@ -231,7 +233,11 @@ export function Workspace({ initialDocs, initialManual, flash }: {
 
   const deleteDoc = async () => {
     if (busyRef.current) return;
-    if (!confirm(`‘${doc.title || '제목 없는 매뉴얼'}’을 문서함에서 삭제할까요?`)) return;
+    if (!(await confirm({
+      title: `‘${doc.title || '제목 없는 매뉴얼'}’을 문서함에서 삭제할까요?`,
+      body: '삭제한 문서는 되살릴 수 없습니다.',
+      confirmLabel: '삭제',
+    }))) return;
     if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
     await saveChain.current;
     const res = await fetch(`/api/manuals/${doc.id}`, { method: 'DELETE' });
@@ -265,9 +271,13 @@ export function Workspace({ initialDocs, initialManual, flash }: {
     return { ...d, sections: arr };
   });
 
-  const deleteSection = (id: string) => {
+  const deleteSection = async (id: string) => {
     const sec = docRef.current.sections.find(s => s.id === id);
-    if (sec?.body.trim() && !confirm(`‘${sec.title}’ 섹션을 삭제할까요? 내용도 함께 사라집니다.`)) return;
+    if (sec?.body.trim() && !(await confirm({
+      title: `‘${sec.title}’ 섹션을 삭제할까요?`,
+      body: '내용도 함께 사라집니다.',
+      confirmLabel: '삭제',
+    }))) return;
     update(d => ({ ...d, sections: d.sections.filter(s => s.id !== id) }));
     if (selectedId === id) setSelectedId(docRef.current.sections[0]?.id ?? null);
   };
@@ -554,6 +564,7 @@ export function Workspace({ initialDocs, initialManual, flash }: {
           findings={findings} reviewed={reviewed} onReview={runReview} onJump={jumpToFinding} />
 
         <div className="scrim" hidden={!railOpen && !panelOpen} onClick={closeDrawers} />
+        {confirmModal}
         <div className="toast" role="status" aria-live="polite" hidden={!toastMsg}>{toastMsg}</div>
       </div>
     </div>

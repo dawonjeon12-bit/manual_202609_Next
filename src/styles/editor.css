@@ -529,6 +529,26 @@
 
 .mx .drawer-only { display: none; }
 
+/* ── 확인 모달 ─────────────────────────────────────────────
+   AutoAnimate 는 부모 안에서 자식의 등장·퇴장을 애니메이션한다.
+   부모(.modal-host)를 화면에 고정하고 비어 있을 땐 클릭을 통과시킨다. */
+.mx .modal-host { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
+.mx .modal-scrim {
+  position: absolute; inset: 0; pointer-events: auto;
+  background: rgba(0,0,0,.6);
+  display: grid; place-items: center; padding: var(--f-md);
+}
+.mx .modal {
+  width: min(440px, 100%);
+  background: var(--f-canvas); color: var(--f-ink);
+  border-radius: var(--f-r-lg); padding: var(--f-lg);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  display: grid; gap: var(--f-sm);
+}
+.mx .modal-title { margin: 0; font-size: 20px; font-weight: 540; line-height: 1.35; letter-spacing: -.26px; }
+.mx .modal-body { margin: 0; font-size: 15px; font-weight: 330; line-height: 1.5; color: #4a4a4a; }
+.mx .modal-actions { display: flex; justify-content: flex-end; gap: var(--f-xs); margin-top: var(--f-xs); }
+
 /* ── 반응형 ────────────────────────────────────────────────── */
 
 @media (max-width: 1180px) {
