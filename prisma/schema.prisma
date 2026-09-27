@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  role      Role      @default(USER)   // 문의함 열람은 ADMIN만
+  plan      String    @default("free") // free | team | enterprise — AI 사용량 상한 결정
+  createdAt DateTime  @default(now())
+  manuals   Manual[]
+  aiUsage   AiUsage[]
+}
+
+model Manual {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String    @default("")
+  kind          String    @default("업무 매뉴얼")
+  code          String    @default("")
+  rev           String    @default("1.0")
+  effectiveDate String    @default("")
+  owner         String    @default("")
+  approver      String    @default("")
+  sample        Boolean   @default(false)   // 문서함의 ‘예시’ 표시
+  brief         Json                        // topic, audience, purpose, tone, depth, raw
+  sections      Section[]
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+model Section {
+  id       String // 클라이언트가 만든 UUID. 문서 안에서만 유일하면 된다.
+  manualId String
+  manual   Manual @relation(fields: [manualId], references: [id], onDelete: Cascade)
+  order    Int
+  type     String // 개요|절차|체크리스트|기준|주의|FAQ|용어|양식
+  title    String
+  body     String @db.Text
+  hint     String @default("")
+
+  @@id([manualId, id])
+  @@index([manualId, order])
+}
+
+model Inquiry {
+  id          String   @id // INQ-260927-A1B2
+  plan        String
+  company     String
+  name        String
+  jobTitle    String   @default("")
+  email       String
+  phone       String   @default("")
+  teamSize    String
+  manualTypes String[]
+  currentTool String   @default("")
+  pain        String   @default("") @db.Text
+  timeline    String
+  needs       String[]
+  note        String   @default("") @db.Text
+  consent     Boolean
+  source      String   @default("")
+  status      String   @default("new") // new|contacted|closed
+  mailed      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// 플랜별 월 AI 호출 상한 (§6 사용량 제한)
+model AiUsage {
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month  String // "2026-09"
+  count  Int    @default(0)
+
+  @@id([userId, month])
+}

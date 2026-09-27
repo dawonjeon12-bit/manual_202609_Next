@@ -1,0 +1,51 @@
+/* ── 모두의 매뉴얼 · 디자인 토큰 ─────────────────────────────
+   원본 site.css :root 를 복사만 했다. 재작성 금지 (plan §7).
+   유일한 차이: 서체 이름 앞에 next/font 변수를 끼웠다 (자체 호스팅).
+   ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* 색 */
+  --f-ink:          #000000;
+  --f-canvas:       #ffffff;
+  --f-on-primary:   #ffffff;
+  --f-inverse-bg:   #000000;
+  --f-inverse-ink:  #ffffff;
+  --f-hairline:     #e6e6e6;
+  --f-hairline-2:   #f1f1f1;
+  --f-surface:      #f7f7f5;
+
+  --f-lime:   #dceeb1;
+  --f-lilac:  #c5b0f4;
+  --f-cream:  #f4ecd6;
+  --f-pink:   #efd4d4;
+  --f-mint:   #c8e6cd;
+  --f-coral:  #f3c9b6;
+  --f-navy:   #1f1d3d;
+
+  --f-magenta: #ff3d8b;
+  --f-success: #1ea64a;
+
+  /* 모서리 */
+  --f-r-xs: 2px;  --f-r-sm: 6px;  --f-r-md: 8px;
+  --f-r-lg: 24px; --f-r-xl: 32px; --f-r-pill: 50px; --f-r-full: 9999px;
+
+  /* 간격 */
+  --f-xxs: 4px; --f-xs: 8px;  --f-sm: 12px; --f-md: 16px;
+  --f-lg: 24px; --f-xl: 32px; --f-xxl: 48px; --f-section: 96px;
+
+  /* 서체 */
+  --f-sans: var(--font-inter), var(--font-noto-kr), "Inter", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+  --f-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+[hidden] { display: none !important; }
+img, svg, video { max-width: 100%; }
+html { background: var(--f-canvas); }
+body {
+  margin: 0; background: var(--f-canvas); color: var(--f-ink);
+  font-family: var(--f-sans); color-scheme: light;
+}
+
+@media (max-width: 768px) {
+  :root { --f-section: 64px; }
+}
