@@ -22,10 +22,16 @@ export const PREV_SITE_PATH_KEY = 'modu/prev-site-path';
 export function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [openedAt, setOpenedAt] = useState(pathname);
 
-  // 라우트가 바뀌면 오버레이를 닫고, 마지막 사이트 경로를 기억한다
-  useEffect(() => {
+  // 라우트가 바뀌면 오버레이를 닫는다 (렌더 중 상태 조정 — effect 에서 setState 하지 않는다)
+  if (openedAt !== pathname) {
+    setOpenedAt(pathname);
     setOpen(false);
+  }
+
+  // 마지막 사이트 경로를 기억한다
+  useEffect(() => {
     try {
       const last = sessionStorage.getItem(LAST_SITE_PATH_KEY);
       if (last && last !== pathname) sessionStorage.setItem(PREV_SITE_PATH_KEY, last);

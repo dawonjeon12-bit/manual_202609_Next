@@ -1,19 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Eyebrow } from '@/components/site';
 import { DONE_KEY, inquiryMailto, inquiryText, type InquiryRecord } from '@/lib/inquiry';
 
 type Done = { record: InquiryRecord; saved: boolean; mailed: boolean };
 
-export function DoneView({ to }: { to: string }) {
-  const [done, setDone] = useState<Done | null | undefined>(undefined);
-  const [copyLabel, setCopyLabel] = useState('내용 복사');
+const noSubscribe = () => () => {};
+const readDone = (): string | null => {
+  try { return sessionStorage.getItem(DONE_KEY); } catch { return null; }
+};
 
-  useEffect(() => {
-    try { setDone(JSON.parse(sessionStorage.getItem(DONE_KEY) || 'null')); } catch { setDone(null); }
-  }, []);
+export function DoneView({ to }: { to: string }) {
+  // 서버 렌더에서는 undefined(빈 화면), 브라우저에서는 sessionStorage 값
+  const raw = useSyncExternalStore(noSubscribe, readDone, () => undefined);
+  const done = useMemo<Done | null | undefined>(() => {
+    if (raw === undefined) return undefined;
+    try { return JSON.parse(raw || 'null'); } catch { return null; }
+  }, [raw]);
+  const [copyLabel, setCopyLabel] = useState('내용 복사');
 
   if (done === undefined) return <div className="page" />;
 

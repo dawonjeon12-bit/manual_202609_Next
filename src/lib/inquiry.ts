@@ -51,6 +51,12 @@ export const newInquiryId = () =>
   'INQ-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' +
   Math.random().toString(36).slice(2, 6).toUpperCase().padEnd(4, '0');
 
+/** 서버에 닿지 못했을 때 완료 화면용으로 브라우저에서 만드는 레코드 */
+export function localInquiryRecord(data: InquiryData, source: string): InquiryRecord {
+  const { hp: _hp, ...rest } = data; // eslint-disable-line @typescript-eslint/no-unused-vars
+  return { ...rest, source, id: newInquiryId(), createdAt: Date.now() };
+}
+
 const clipText = (s: string, n: number) => (String(s || '').length > n ? String(s).slice(0, n) + '…' : String(s || ''));
 
 /** 메일 본문·복사용 텍스트 — 원본 inquiryText() 그대로 */

@@ -1,6 +1,20 @@
 import { z } from 'zod';
-import { briefSchema, sectionSchema } from './manuals';
 import { REFINE } from './manual';
+
+const str = (max: number) => z.string().max(max);
+
+const briefSchema = z.object({
+  topic: str(4000), audience: str(400), purpose: str(400),
+  tone: str(40), depth: str(40), raw: str(60000),
+});
+
+const sectionSchema = z.object({
+  id: str(64).min(1),
+  type: str(20),
+  title: str(200),
+  body: str(200000),
+  hint: str(400),
+});
 
 /** AI 라우트가 받는 문서 — 저장 전 상태 그대로 (클라이언트 편집본) */
 export const aiManualSchema = z.object({

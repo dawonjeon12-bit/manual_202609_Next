@@ -33,6 +33,8 @@ export function Footer() {
             <Link href="/editor">작업 화면 열기</Link>
             <Link href="/pricing">자주 묻는 질문</Link>
             <Link href="/contact">도입 문의</Link>
+            <Link href="/privacy">개인정보처리방침</Link>
+            <Link href="/terms">이용약관</Link>
           </div>
         </div>
         <div className="footer-base">

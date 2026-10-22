@@ -1,64 +1,40 @@
 'use client';
 
 /* 작업 화면 — 원본 app.js 의 상태·흐름을 React 로 옮겼다.
-   문서 = 서버(계정)가 원본, 브라우저 localStorage 에는 저장 전 사본만 남긴다. */
+   문서함은 이 브라우저(localStorage)에만 저장한다 (src/lib/local-store.ts). */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LAST_SITE_PATH_KEY } from '@/components/Nav';
 import { AiError, aiJson, aiStream } from '@/lib/ai-client';
 import { ERR } from '@/lib/ai-errors';
 import { downloadFile, safeName, toHTML, toMarkdown } from '@/lib/export';
-import { SEC_TYPES, uid, type Brief, type Manual, type ManualSummary, type RefineId, type Section } from '@/lib/manual';
+import { initialDocs, newManual, saveDocs } from '@/lib/local-store';
+import { SEC_TYPES, uid, type Brief, type Manual, type RefineId, type Section } from '@/lib/manual';
 import { AiPanel, type Tab } from './AiPanel';
 import { useConfirm } from './ConfirmModal';
 import { DocHead } from './DocHead';
 import type { Finding } from './Findings';
 import { SectionList, type Mode } from './SectionList';
 
-export type Flash = 'new' | 'deleted' | null;
-
-const BACKUP = (id: string) => `modu/backup/${id}`;
 const timeStr = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 const narrow = () => window.matchMedia('(max-width: 1180px)').matches;
 
-/** 저장·AI 요청에 보내는 부분 */
-const toInput = (d: Manual) => ({
-  title: d.title, kind: d.kind, code: d.code, rev: d.rev, effectiveDate: d.effectiveDate,
-  owner: d.owner, approver: d.approver, brief: d.brief, sections: d.sections,
-});
-
-interface Backup { doc: Manual; base: number }
-function readBackup(id: string): Backup | null {
-  try { return JSON.parse(localStorage.getItem(BACKUP(id)) || 'null'); } catch { return null; }
-}
-function writeBackup(d: Manual, base: number) {
-  try { localStorage.setItem(BACKUP(d.id), JSON.stringify({ doc: d, base })); } catch { /* 용량 초과 등 */ }
-}
-function dropBackup(id: string) {
-  try { localStorage.removeItem(BACKUP(id)); } catch { /* 저장 불가 */ }
-}
-
-export function Workspace({ initialDocs, initialManual, flash }: {
-  initialDocs: ManualSummary[];
-  initialManual: Manual;
-  flash: Flash;
-}) {
+/** 브라우저에서만 렌더링된다 (src/app/editor/EditorClient.tsx — ssr:false) */
+export function Workspace() {
   const router = useRouter();
 
   /* ── 문서 상태 ─────────────────────────────────────────── */
-  const [doc, setDoc] = useState(initialManual);
-  const docRef = useRef(initialManual);
-  const [docs, setDocs] = useState(initialDocs);
+  const [docs, setDocs] = useState<Manual[]>(initialDocs);
+  const docsRef = useRef(docs);
+  const [doc, setDoc] = useState<Manual>(() => docs[0]);
+  const docRef = useRef(doc);
   const [mode, setMode] = useState<Mode>('edit');
-  const [selectedId, setSelectedId] = useState<string | null>(initialManual.sections[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(() => doc.sections[0]?.id ?? null);
 
   /* ── 저장 ─────────────────────────────────────────────── */
   const [saveText, setSaveText] = useState('준비됨');
   const [saving, setSaving] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const serverAt = useRef(initialManual.updatedAt);
-  const saveChain = useRef<Promise<void>>(Promise.resolve());
-  const editSeq = useRef(0);
 
   /* ── AI ───────────────────────────────────────────────── */
   const [busy, setBusy] = useState(false);
@@ -93,102 +69,53 @@ export function Workspace({ initialDocs, initialManual, flash }: {
 
   /* ── 저장 ─────────────────────────────────────────────── */
 
-  const persist = useCallback((opts: { keepalive?: boolean } = {}) => {
-    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
-    const d = docRef.current;
-    const seq = editSeq.current;
-    writeBackup(d, serverAt.current);
-
-    const run = async () => {
-      let res: Response;
-      try {
-        res = await fetch(`/api/manuals/${d.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toInput(d)),
-          keepalive: opts.keepalive,
-        });
-      } catch {
-        setSaving(false); setSaveText('서버 저장 실패 · 이 브라우저에만 보관');
-        return;
-      }
-      if (!res.ok) {
-        setSaving(false);
-        setSaveText(res.status === 401 ? '로그인 만료 · 이 브라우저에만 보관' : '서버 저장 실패 · 이 브라우저에만 보관');
-        return;
-      }
-      const { updatedAt } = await res.json();
-      serverAt.current = updatedAt;
-      setDocs(list => list.map(x => x.id === d.id
-        ? { ...x, title: d.title, code: d.code, sample: d.sample, sectionCount: d.sections.length, updatedAt }
-        : x));
-      // 그사이 새로 고친 게 없으면 사본을 지우고 ‘저장됨’
-      if (seq === editSeq.current) {
-        dropBackup(d.id);
-        setSaving(false);
-        setSaveText('저장됨 · ' + timeStr());
-      }
-    };
-    saveChain.current = saveChain.current.then(run);
-    return saveChain.current;
+  const commitDocs = useCallback((list: Manual[]) => {
+    docsRef.current = list;
+    setDocs(list);
+    return saveDocs(list);
   }, []);
 
+  const persist = useCallback(() => {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+    const d = docRef.current;
+    const list = docsRef.current.some(x => x.id === d.id)
+      ? docsRef.current.map(x => (x.id === d.id ? d : x))
+      : [d, ...docsRef.current];
+    setSaving(false);
+    setSaveText(commitDocs(list) ? '저장됨 · ' + timeStr() : '저장 실패 · 브라우저 저장 공간을 확인하세요');
+  }, [commitDocs]);
+
   const touch = useCallback(() => {
-    editSeq.current++;
+    docRef.current = { ...docRef.current, updatedAt: Date.now() };
     setSaving(true); setSaveText('저장 중…');
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => { persist(); }, 900);
+    saveTimer.current = setTimeout(persist, 900);
   }, [persist]);
 
   /** 문서를 바꾸고 자동 저장을 예약한다 */
   const update = useCallback((fn: (d: Manual) => Manual, save = true) => {
-    const next = fn(docRef.current);
-    docRef.current = next;
-    setDoc(next);
+    docRef.current = fn(docRef.current);
     if (save) touch();
+    setDoc(docRef.current);
   }, [touch]);
 
   const patchSection = useCallback((id: string, patch: Partial<Section>, save = true) =>
     update(d => ({ ...d, sections: d.sections.map(s => (s.id === id ? { ...s, ...patch } : s)) }), save), [update]);
 
   /** 예약된 저장을 지금 끝낸다 (문서 전환 전) */
-  const flush = useCallback(async () => {
-    if (saveTimer.current) await persist();
-    else await saveChain.current;
-  }, [persist]);
+  const flush = useCallback(() => { if (saveTimer.current) persist(); }, [persist]);
 
   /* ── 시작 ─────────────────────────────────────────────── */
 
   useEffect(() => {
-    // 서버에 닿지 못했던 변경이 브라우저에 남아 있으면 되살린다
-    const b = readBackup(initialManual.id);
-    if (b && b.base >= initialManual.updatedAt && JSON.stringify(toInput(b.doc)) !== JSON.stringify(toInput(initialManual))) {
-      docRef.current = { ...b.doc, id: initialManual.id };
-      setDoc(docRef.current);
-      touch();
-      toast('저장되지 않았던 변경을 이 브라우저에서 되살렸습니다.');
-    } else if (b) {
-      dropBackup(initialManual.id);
-    }
-
-    if (flash === 'new') {
-      setTab('brief');
-      toast('새 매뉴얼을 만들었습니다. 브리프를 채우고 목차를 설계하세요.');
-    } else if (flash === 'deleted') {
-      toast('삭제했습니다.');
-    }
-    if (flash) router.replace(`/editor/${initialManual.id}`, { scroll: false });
     titleRef.current?.focus({ preventScroll: true });
-    // 마운트할 때 한 번만
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 페이지를 떠날 때 예약된 저장을 마저 보낸다
+  // 페이지를 떠날 때 예약된 저장을 마저 한다
   useEffect(() => {
-    const onUnload = () => { if (saveTimer.current) persist({ keepalive: true }); };
-    window.addEventListener('beforeunload', onUnload);
-    return () => { window.removeEventListener('beforeunload', onUnload); onUnload(); };
-  }, [persist]);
+    window.addEventListener('beforeunload', flush);
+    return () => { window.removeEventListener('beforeunload', flush); flush(); };
+  }, [flush]);
 
   /* ── 드로어 ───────────────────────────────────────────── */
 
@@ -215,20 +142,33 @@ export function Workspace({ initialDocs, initialManual, flash }: {
 
   /* ── 문서 조작 ────────────────────────────────────────── */
 
-  const openDoc = async (id: string) => {
-    closeDrawers();
-    if (id === doc.id || busyRef.current) return;
-    await flush();
-    router.push(`/editor/${id}`);
+  /** 문서를 열고 문서마다 따로인 상태를 처음으로 돌린다 (원본 openDoc) */
+  const show = (d: Manual) => {
+    docRef.current = d;
+    setDoc(d);
+    setSelectedId(d.sections[0]?.id ?? null);
+    setFindings([]); setReviewed(false); setUndo(null);
+    if (stageRef.current) stageRef.current.scrollTop = 0;
   };
 
-  const newDoc = async () => {
+  const openDoc = (id: string) => {
+    closeDrawers();
+    if (id === doc.id || busyRef.current) return;
+    flush();
+    const d = docsRef.current.find(x => x.id === id);
+    if (d) show(d);
+  };
+
+  const newDoc = () => {
     if (busyRef.current) return;
-    await flush();
-    const res = await fetch('/api/manuals', { method: 'POST' });
-    if (!res.ok) { toast('새 문서를 만들지 못했습니다. 다시 시도하세요.'); return; }
-    const { id } = await res.json();
-    router.push(`/editor/${id}?flash=new`);
+    flush();
+    const d = newManual();
+    commitDocs([d, ...docsRef.current]);
+    show(d);
+    setSaveText('저장됨 · ' + timeStr());
+    switchTab('brief');
+    requestAnimationFrame(() => titleRef.current?.focus());
+    toast('새 매뉴얼을 만들었습니다. 브리프를 채우고 목차를 설계하세요.');
   };
 
   const deleteDoc = async () => {
@@ -239,17 +179,12 @@ export function Workspace({ initialDocs, initialManual, flash }: {
       confirmLabel: '삭제',
     }))) return;
     if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
-    await saveChain.current;
-    const res = await fetch(`/api/manuals/${doc.id}`, { method: 'DELETE' });
-    if (!res.ok && res.status !== 404) { toast('삭제하지 못했습니다. 다시 시도하세요.'); return; }
-    dropBackup(doc.id);
-    const rest = docs.filter(d => d.id !== doc.id).sort((a, b) => b.updatedAt - a.updatedAt);
-    let next = rest[0]?.id;
-    if (!next) {
-      const r = await fetch('/api/manuals', { method: 'POST' });
-      next = r.ok ? (await r.json()).id : undefined;
-    }
-    router.push(next ? `/editor/${next}?flash=deleted` : '/editor');
+    let rest = docsRef.current.filter(d => d.id !== doc.id);
+    if (!rest.length) rest = [newManual()];
+    commitDocs(rest);
+    show(rest[0]);
+    setSaving(false); setSaveText('저장됨 · ' + timeStr());
+    toast('삭제했습니다.');
   };
 
   const selectSection = (id: string) => setSelectedId(id);
@@ -470,9 +405,10 @@ export function Workspace({ initialDocs, initialManual, flash }: {
 
   /* ── 화면 ─────────────────────────────────────────────── */
 
+  // 문서함은 편집 중인 문서를 실시간으로 반영해 최근 순으로
   const railDocs = docs
-    .map(x => (x.id === doc.id ? { ...x, title: doc.title, code: doc.code, sectionCount: doc.sections.length } : x))
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+    .map(x => (x.id === doc.id ? doc : x))
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
   return (
     <div className="mx">
@@ -527,13 +463,13 @@ export function Workspace({ initialDocs, initialManual, flash }: {
                   <span className="doc-item-name">{d.title || '제목 없는 매뉴얼'}</span>
                   <span className="doc-item-meta">
                     {d.sample && <span className="tag-sample">예시</span>}
-                    <span>{d.code || '미지정'}</span><span>섹션 {d.sectionCount}</span>
+                    <span>{d.code || '미지정'}</span><span>섹션 {d.sections.length}</span>
                   </span>
                 </button>
               </li>
             ))}
           </ul>
-          <p className="rail-note">계정에 저장됩니다. 어느 기기에서 열어도 같은 문서함입니다.</p>
+          <p className="rail-note">이 브라우저에만 저장됩니다. 다른 기기에서는 보이지 않습니다.</p>
         </aside>
 
         <main className="stage" ref={stageRef}>

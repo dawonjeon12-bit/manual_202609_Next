@@ -3,8 +3,6 @@ import 'server-only';
 import Anthropic from '@anthropic-ai/sdk';
 import type { BetaMessageStreamParams } from '@anthropic-ai/sdk/resources/beta/messages/messages';
 import type { AnthropicBeta } from '@anthropic-ai/sdk/resources/beta/beta';
-import { currentUser, type SessionUser } from './session';
-import { consumeAiCall } from './usage';
 import { STREAM_ERROR_MARK, type AiErrorCode } from './ai-errors';
 import { json } from './http';
 
@@ -26,14 +24,11 @@ function getClient(): Anthropic | null {
 
 export const aiError = (code: AiErrorCode, status: number) => json({ error: code }, status);
 
-/** 로그인 → 키 설정 → 월 사용량 순으로 확인. 통과하면 호출 1회를 기록한다. */
-export async function guardAi(): Promise<{ user: SessionUser; anthropic: Anthropic } | Response> {
-  const user = await currentUser();
-  if (!user) return aiError('session_expired', 401);
+/** 키 설정을 확인한다. 로그인 없이 쓰므로 사용자별 사용량 상한은 없다. */
+export async function guardAi(): Promise<{ anthropic: Anthropic } | Response> {
   const anthropic = getClient();
   if (!anthropic) return aiError('not_declared', 503);
-  if (!(await consumeAiCall(user.id))) return aiError('quota_exceeded', 429);
-  return { user, anthropic };
+  return { anthropic };
 }
 
 /** SDK 예외 → 원본 ERR 맵의 코드 */

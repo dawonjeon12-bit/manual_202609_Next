@@ -1,6 +1,6 @@
 # 모두의 매뉴얼 — Next.js
 
-AI와 함께 내용에 맞는 업무 매뉴얼을 만드는 도구. 정적 HTML/CSS/JS 버전(`../manual_1`)을 `plan.md`에 따라 Next.js 15로 옮겼다.
+AI와 함께 내용에 맞는 업무 매뉴얼을 만드는 도구. 정적 HTML/CSS/JS 버전(`../manual_1`)을 `plan.md`에 따라 Next.js로 옮겼다. 현재 **Next.js 16** (Turbopack, React 19.2), Node.js 20.9 이상.
 디자인 판단의 기준은 `DESIGN-figma.md`.
 
 ## 시작하기
@@ -8,35 +8,34 @@ AI와 함께 내용에 맞는 업무 매뉴얼을 만드는 도구. 정적 HTML/
 ```bash
 npm install
 cp .env.example .env.local     # 값 채우기 (아래 표)
-npx prisma migrate deploy      # 또는 개발 중 스키마를 고칠 때: npm run db:migrate
+npx prisma migrate deploy      # 도입 문의를 DB에 저장할 때만 (DATABASE_URL 설정 후)
 npm run dev
 ```
 
 | 변수 | 필수 | 설명 |
 |---|---|---|
-| `DATABASE_URL` / `DIRECT_URL` | ✓ | Postgres. Neon·Supabase는 풀링 URL / 직결 URL |
-| `AUTH_SECRET` | ✓ | `npx auth secret` |
-| `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | ✓ | Google OAuth. 리디렉션 URI: `<도메인>/api/auth/callback/google` |
-| `ANTHROPIC_API_KEY` | ✓ | 서버에서만 읽는다. 없으면 AI 버튼이 ‘사용할 수 없음’으로 바뀐다 |
+| `RESEND_API_KEY` | | 도입 문의를 `dawonjeon12@gmail.com` 으로 발송. 없으면 완료 화면의 mailto 폴백으로 전달한다 |
+| `ANTHROPIC_API_KEY` | | 편집기 AI 기능. 없으면 AI 버튼이 ‘사용할 수 없음’으로 바뀐다. **로그인이 없어 사용자별 상한이 없으니** Anthropic 콘솔에서 월 비용 한도를 걸어 둘 것 |
 | `ANTHROPIC_MODEL` | | 기본 `claude-opus-5`. 비용을 낮추려면 `claude-sonnet-5` |
-| `RESEND_API_KEY` | | 도입 문의를 `dawonjeon12@gmail.com` 으로 발송. 없으면 저장만 하고 완료 화면의 mailto 폴백으로 전달한다 |
-| `ADMIN_EMAILS` | | 쉼표 구분. 이 주소로 로그인하면 `/admin/inquiries` 열람 가능 |
+| `DATABASE_URL` / `DIRECT_URL` | | 도입 문의 저장용 Postgres. 없으면 저장을 건너뛰고 메일만 보낸다 |
 | `SITE_URL` | | 메타데이터·sitemap 의 절대 주소 |
 
 ## 스크립트
 
 - `npm test` — 마크다운 렌더러·내보내기가 **원본 app.js 출력과 한 글자까지 같은지** 비교한다.
   스냅샷은 `node scripts/snapshot-original-markdown.mjs ../manual_1/app.js` 로 다시 만든다.
-- `npm run typecheck`, `npm run lint`, `npm run build`
+- `npm run typecheck`, `npm run lint` (ESLint CLI — Next 16 에서 `next lint` 는 제거됨), `npm run build`
+- `npm run build:local` — 로컬 빌드용 (Webpack). 이 폴더 경로에 한글(`ASC빌더트랙`)이 있으면
+  Turbopack 빌드가 `Cannot find module for page` 로 실패한다. `next dev` 와 Vercel 빌드(영문 경로)는 영향 없음.
+  폴더를 영문 경로로 옮기면 `npm run build` 를 그대로 써도 된다.
 
 ## 구조
 
 ```
-src/app/(site)/…          마케팅 6페이지, 도입 문의, 로그인, 관리자 문의함 (내비·푸터 있음)
-src/app/editor/…          작업 화면 (전체 화면). /editor 는 가장 최근 문서로 이동
-src/app/api/manuals       문서 CRUD — 모든 쿼리를 userId 로 한정
+src/app/(site)/…          마케팅 6페이지, 도입 문의, 개인정보처리방침·약관 (내비·푸터 있음)
+src/app/editor/           작업 화면 (전체 화면). 로그인 없이 열리고 문서함은 브라우저 localStorage 에 저장 (src/lib/local-store.ts)
 src/app/api/ai/*          outline · section · refine · review (maxDuration 300)
-src/app/api/inquiries     문의 제출(허니팟→저장→메일) / 관리자 목록
+src/app/api/inquiries     문의 제출(허니팟→저장→메일)
 src/lib/markdown.ts       renderMarkdown() 이식본
 src/lib/prompts.ts        프롬프트 원문 (FORMAT_RULES 포함) — 문구 수정 금지
 src/lib/export.ts         toMarkdown() toHTML() + 브라우저 다운로드
@@ -52,7 +51,7 @@ prisma/ tests/ scripts/  DB 스키마·마이그레이션, 원본 대조 테스�
 - 섹션 프롬프트의 앞부분(브리프·전체 목차)에 prompt caching — ‘전체 초안’에서 섹션마다 반복되는 입력.
 - 안전 분류기 거절에 대비해 `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`)를 켜 두었다.
 - 중단 버튼 → `AbortController` → 요청 `signal` → SDK 요청 취소 (과금 중단).
-- 플랜별 월 호출 상한: `src/lib/plans.ts` (무료 60 · 팀 1,500 · 엔터프라이즈 무제한). 상한은 `AiUsage` 테이블에 기록.
+- 로그인이 없으므로 사용자별 호출 상한은 없다. Google 로그인·서버 문서함·관리자 문의함·플랜별 상한은 커밋 `31fee23` 에 남아 있다.
 
 ## 배포 (Vercel)
 

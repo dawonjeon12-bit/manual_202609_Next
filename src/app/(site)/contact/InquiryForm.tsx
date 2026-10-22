@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import { ChoiceGroup } from '@/components/ChoiceGroup';
 import { PREV_SITE_PATH_KEY } from '@/components/Nav';
 import {
-  DONE_KEY, inquirySchema, newInquiryId, MANUAL_TYPES, NEEDS, TEAM_SIZES, TIMELINES, TOOLS,
+  DONE_KEY, inquirySchema, localInquiryRecord, MANUAL_TYPES, NEEDS, TEAM_SIZES, TIMELINES, TOOLS,
   type InquiryData, type InquiryForm as Form, type InquiryRecord,
 } from '@/lib/inquiry';
 
@@ -57,9 +57,7 @@ export function InquiryForm({ plan }: { plan: '팀' | '엔터프라이즈' }) {
       result = body;
     } catch {
       // 서버에 닿지 못해도 완료 화면에서 메일로 전달할 수 있게 한다 (원본과 같은 폴백)
-      const rest: Omit<InquiryData, 'hp'> & { hp?: string } = { ...data };
-      delete rest.hp;
-      result = { record: { ...rest, source, id: newInquiryId(), createdAt: Date.now() }, saved: false, mailed: false };
+      result = { record: localInquiryRecord(data, source), saved: false, mailed: false };
     }
     try { sessionStorage.setItem(DONE_KEY, JSON.stringify(result)); } catch { /* 저장 불가 */ }
     router.push('/contact/done');

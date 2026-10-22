@@ -38,7 +38,7 @@ interface Props {
 
 const TABS: [Tab, string][] = [['brief', '브리프'], ['refine', '다듬기'], ['review', '검수']];
 
-export function AiPanel(p: Props) {
+export function AiPanel({ topicRef, ...p }: Props) {
   const b = p.doc.brief;
   const idx = p.doc.sections.findIndex(s => s.id === p.selectedId);
   const target = idx >= 0 ? p.doc.sections[idx] : null;
@@ -60,7 +60,7 @@ export function AiPanel(p: Props) {
 
           <div className="field">
             <label htmlFor="bTopic">어떤 업무인가요</label>
-            <textarea ref={p.topicRef} id="bTopic" rows={3} placeholder="예) 브랜드 SNS 콘텐츠를 기획하고 발행하기까지의 전 과정"
+            <textarea ref={topicRef} id="bTopic" rows={3} placeholder="예) 브랜드 SNS 콘텐츠를 기획하고 발행하기까지의 전 과정"
               value={b.topic} onChange={e => p.onBrief({ topic: e.target.value })} />
           </div>
 

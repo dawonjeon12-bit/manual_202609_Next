@@ -1,8 +1,7 @@
 import { prisma } from '@/lib/db';
 import { inquirySchema, newInquiryId, type InquiryRecord } from '@/lib/inquiry';
 import { sendInquiryMail } from '@/lib/mail';
-import { currentUser } from '@/lib/session';
-import { badRequest, json, readJson, unauthorized } from '@/lib/http';
+import { badRequest, json, readJson } from '@/lib/http';
 
 export const runtime = 'nodejs';
 
@@ -45,13 +44,4 @@ export async function POST(req: Request) {
   }
 
   return json({ record: rec, saved, mailed }, saved || mailed ? 201 : 502);
-}
-
-/** 문의함 — ADMIN 만 */
-export async function GET() {
-  const user = await currentUser();
-  if (!user) return unauthorized();
-  if (user.role !== 'ADMIN') return json({ error: 'forbidden' }, 403);
-  const rows = await prisma.inquiry.findMany({ orderBy: { createdAt: 'desc' }, take: 50 });
-  return json({ inquiries: rows });
 }
