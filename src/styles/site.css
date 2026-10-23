@@ -463,3 +463,128 @@
   .legal-table td:first-child { white-space: normal; }
   .legal-table th, .legal-table td { padding: 8px 6px; }
 }
+
+/* ── 첫 화면 시연 (HeroDemo) ────────────────────────────────
+   메모 쪽지 두 장이 문서 카드 위에 겹친다. 문서 섹션은 자리를 미리 차지한 채
+   투명하게 있다가 단계마다 떠오른다 — 높이가 변하지 않아 레이아웃이 흔들리지 않는다. */
+
+.demo { position: relative; padding: 92px 0 0 0; }
+
+.demo-memo {
+  position: absolute; z-index: 2; top: 0; left: -18px; width: 250px;
+  background: var(--f-cream); border-radius: var(--f-r-sm);
+  padding: 12px 14px; transform: rotate(-2.5deg);
+  font-size: 14px; font-weight: 400; line-height: 1.45;
+  box-shadow: 0 6px 18px rgba(0,0,0,.10);
+  transition: opacity .4s ease, transform .4s ease;
+}
+.demo-memo-label {
+  display: block; margin-bottom: 4px;
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .6px; text-transform: uppercase; color: #6b6b6b;
+}
+/* 문서가 써지기 시작하면 첫 메모는 살짝 물러난다 */
+.demo[data-stage="2"] .demo-memo:not(.demo-memo-add),
+.demo[data-stage="3"] .demo-memo:not(.demo-memo-add),
+.demo[data-stage="4"] .demo-memo:not(.demo-memo-add) { transform: rotate(-2.5deg) translateY(-6px); }
+
+.demo-memo-add {
+  top: auto; bottom: 64px; left: auto; right: -14px; width: 210px;
+  background: var(--f-lime); transform: rotate(2deg) translateY(10px); opacity: 0;
+}
+.demo-memo-add.is-in { opacity: 1; transform: rotate(2deg); }
+
+.demo-doc {
+  position: relative; background: var(--f-canvas);
+  border: 1px solid var(--f-hairline); border-radius: var(--f-r-md); overflow: hidden;
+}
+.demo-status {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  background: var(--f-cream); font-size: 12.5px; font-weight: 400; min-height: 34px;
+}
+.demo[data-stage="4"] .demo-status { background: var(--f-mint); }
+.demo .pulse { width: 7px; height: 7px; border-radius: var(--f-r-full); background: var(--f-ink); flex: none; animation: demopulse 1.3s ease-in-out infinite; }
+.demo[data-stage="4"] .pulse { animation: none; }
+@keyframes demopulse { 0%, 100% { opacity: .22; } 50% { opacity: 1; } }
+
+.demo-body { padding: var(--f-lg); display: grid; gap: 12px; }
+.demo-head, .demo-sec { opacity: 0; transform: translateY(8px); transition: opacity .45s ease, transform .45s ease; transition-delay: var(--d, 0ms); }
+.demo-head.is-in, .demo-sec.is-in { opacity: 1; transform: none; }
+.demo-head { display: grid; gap: 8px; padding-bottom: 4px; }
+.demo-sec { display: grid; gap: 7px; padding-top: 12px; border-top: 1px solid var(--f-hairline-2); }
+
+.mock-chip[data-c="cream"] { background: var(--f-cream); }
+.demo-p { margin: 0; font-size: 14px; font-weight: 330; line-height: 1.5; }
+
+.demo-steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 5px; }
+.demo-steps li { counter-increment: s; position: relative; padding-left: 34px; font-size: 14px; font-weight: 330; line-height: 1.45; }
+.demo-steps li::before {
+  content: counter(s, decimal-leading-zero); position: absolute; left: 0; top: 1px;
+  min-width: 24px; padding: 1px 0; text-align: center; border-radius: var(--f-r-sm);
+  font-family: var(--f-mono); font-size: 10px; background: var(--f-lilac);
+}
+.demo-steps b { font-weight: 600; }
+
+.demo-checks { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.demo-checks li { position: relative; padding-left: 24px; font-size: 14px; font-weight: 330; }
+.demo-checks li::before {
+  content: ""; position: absolute; left: 0; top: 3px; width: 13px; height: 13px;
+  border: 1.5px solid var(--f-ink); border-radius: var(--f-r-xs);
+}
+
+.demo-warn {
+  border-top: 0; margin-top: 4px; padding: 10px 14px; border-radius: var(--f-r-md);
+  background: var(--f-pink); font-size: 14px; font-weight: 330; line-height: 1.5; display: block;
+}
+.demo-warn-label { display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .6px; margin-bottom: 3px; }
+.demo-todo { background: rgba(255,255,255,.7); padding: 1px 5px; border-radius: var(--f-r-xs); font-weight: 480; color: inherit; }
+.demo-merged {
+  background: var(--f-mint); padding: 1px 6px; border-radius: var(--f-r-xs); font-weight: 600; color: inherit;
+  animation: demomerge .6s ease;
+}
+.demo-merged-tag {
+  margin-left: 6px; font-family: var(--f-mono); font-size: 9.5px; font-weight: 400; letter-spacing: .5px;
+  background: var(--f-ink); color: var(--f-on-primary); padding: 1px 6px; border-radius: var(--f-r-pill); vertical-align: 1px;
+}
+@keyframes demomerge { from { background: var(--f-lime); transform: scale(1.06); } to { transform: none; } }
+
+@media (max-width: 960px) {
+  .demo { padding-top: 0; }
+  .demo-memo { position: relative; left: 0; width: auto; max-width: 320px; margin-bottom: 14px; }
+  .demo-memo-add { position: absolute; bottom: 18px; right: 8px; width: 200px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-head, .demo-sec, .demo-memo, .demo-merged { transition: none; animation: none; }
+  .demo .pulse { animation: none; }
+}
+
+/* ── 하단 바로가기 (FloatingCta) ──────────────────────────────
+   알약 하나에 문구 + 버튼 두 개. 스크롤을 내리면 아래에서 올라온다. */
+
+.fcta {
+  position: fixed; z-index: 50; left: 50%; bottom: 20px;
+  transform: translate(-50%, calc(100% + 32px));
+  display: flex; align-items: center; gap: var(--f-md);
+  padding: 8px 8px 8px 22px; border-radius: var(--f-r-pill);
+  background: var(--f-canvas); box-shadow: 0 8px 28px rgba(0,0,0,.14), inset 0 0 0 1px var(--f-hairline);
+  max-width: calc(100vw - 32px);
+  opacity: 0; transition: transform .28s ease, opacity .28s ease;
+}
+.fcta.is-on { transform: translate(-50%, 0); opacity: 1; }
+.fcta-text { margin: 0; font-size: 15px; font-weight: 480; letter-spacing: -.14px; white-space: nowrap; }
+.fcta-actions { display: flex; gap: var(--f-xs); flex: none; }
+
+/* 바가 푸터 맨 아래 글자를 가리지 않게 */
+.footer { padding-bottom: calc(var(--f-section) + 72px); }
+
+@media (max-width: 640px) {
+  .fcta {
+    left: 0; right: 0; bottom: 0; transform: translateY(100%);
+    max-width: none; border-radius: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    box-shadow: 0 -6px 20px rgba(0,0,0,.10), inset 0 1px 0 var(--f-hairline);
+  }
+  .fcta.is-on { transform: none; }
+  .fcta-text { display: none; }
+  .fcta-actions { flex: 1; }
+  .fcta-actions > * { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .fcta { transition: none; } }

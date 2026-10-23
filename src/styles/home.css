@@ -1,0 +1,215 @@
+/* ── 홈 · 레이아웃 ─────────────────────────────────────────────
+   구조: 히어로 → 매뉴얼 종류 띠 → 가운데 제목 + 제품 화면 → 분할 특징 → 공감 캐러셀
+         → 진한 띠 → 시연 + 단계 카드 → FAQ → CTA 카드.
+   색은 DESIGN-figma.md 규칙만 따른다:
+   흰 캔버스 + 검정 잉크의 흑백 틀, 이야기 구간은 둥근(24px) 파스텔 색 블록,
+   어두운 면은 네이비 블록 하나와 검정(inverse) 면뿐. 그라데이션·그림자로 깊이를 만들지 않는다. */
+
+.home { --h-title: clamp(32px, 4vw, 50px); }
+
+.home .h-sec { padding-block: var(--f-section); }
+.home .h-lead { display: grid; gap: var(--f-md); }
+.home .h-center { text-align: center; justify-items: center; max-width: 820px; margin: 0 auto var(--f-xxl); }
+.home .h-eyebrow { margin: 0; font-family: var(--f-mono); font-size: 13px; letter-spacing: .6px; text-transform: uppercase; }
+
+.home .h-title {
+  margin: 0; font-size: var(--h-title); font-weight: 700; line-height: 1.22; letter-spacing: -.025em; text-wrap: balance;
+}
+/* 본문은 회색 대신 검정 + 가는 굵기로 위계를 만든다 */
+.home .h-sub { margin: 0; font-size: clamp(17px, 1.4vw, 19px); font-weight: 330; line-height: 1.6; max-width: 56ch; }
+.home .h-center .h-sub { margin-inline: auto; }
+
+/* 강조 단어 — 라임 알약 (어두운 블록 위에서도 같은 라임) */
+.home .hl {
+  background: var(--f-lime); color: var(--f-ink);
+  padding: .02em .32em .08em; border-radius: .32em;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.home .h-lime .hl, .home .h-faq-block .hl { background: var(--f-canvas); }
+
+/* 버튼 — 알약 + 겹화살표. 기본 = 검정, 보조 = 흰색 (DESIGN: button-primary / button-secondary) */
+.home .h-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 48px; padding: 12px 24px; border-radius: var(--f-r-pill);
+  font-size: 17px; font-weight: 540; letter-spacing: -.1px; text-decoration: none; white-space: nowrap;
+  transition: transform .12s ease, background-color .12s ease;
+}
+.home .h-btn:hover { transform: scale(1.02); }
+.home .h-btn-primary { background: var(--f-ink); color: var(--f-on-primary); }
+.home .h-btn-secondary { background: var(--f-canvas); color: var(--f-ink); box-shadow: inset 0 0 0 1px var(--f-hairline); }
+.home .h-btn-secondary:hover { background: var(--f-surface); }
+/* 어두운 면 위 — 기본은 흰색, 보조는 반투명 흰색 (button-icon-circular-inverse 와 같은 규칙) */
+.home .h-dark .h-btn-primary { background: var(--f-canvas); color: var(--f-ink); }
+.home .h-dark .h-btn-secondary { background: rgba(255,255,255,.16); color: var(--f-inverse-ink); box-shadow: none; }
+.home .h-chev { flex: none; }
+.home .h-cta { display: flex; gap: var(--f-sm); flex-wrap: wrap; justify-content: center; }
+.home .h-cta-left { justify-content: flex-start; margin-top: var(--f-xs); }
+
+/* 색 블록 — 콘텐츠 폭 안의 둥근 패널 */
+.home .h-block { border-radius: var(--f-r-lg); padding: clamp(32px, 5vw, 72px); }
+.home .h-lime  { background: var(--f-lime); }
+.home .h-cream { background: var(--f-cream); }
+.home .h-mint  { background: var(--f-mint); }
+.home .h-navy  { background: var(--f-navy); color: var(--f-inverse-ink); }
+.home .h-block-sec { padding-top: var(--f-section); }
+
+/* ── 1 · 히어로 (흰 캔버스) ─────────────────────────────────── */
+.home .h-hero { background: var(--f-canvas); }
+.home .h-hero-in {
+  text-align: center; display: grid; justify-items: center; gap: var(--f-lg);
+  padding-top: clamp(56px, 8vw, 112px); padding-bottom: clamp(56px, 7vw, 96px);
+}
+.home .h-pill {
+  margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .7px;
+  padding: 6px 14px; border-radius: var(--f-r-pill); background: var(--f-surface);
+}
+.home .h-hero-title {
+  margin: 0; font-size: clamp(38px, 6vw, 72px); font-weight: 700; line-height: 1.15; letter-spacing: -.03em; text-wrap: balance;
+}
+.home .h-hero-sub { margin: 0; max-width: 46ch; font-size: clamp(17px, 1.5vw, 20px); font-weight: 330; line-height: 1.6; }
+.home .h-note { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .6px; }
+
+/* 매뉴얼 종류 띠 — 검정 마키 띠 */
+.home .h-strip { background: var(--f-inverse-bg); color: var(--f-inverse-ink); padding: 18px 0; display: flex; align-items: center; gap: var(--f-lg); }
+.home .h-strip-title {
+  flex: none; margin: 0; padding-left: max(var(--f-lg), calc((100vw - 1280px) / 2 + var(--f-xxl)));
+  font-family: var(--f-mono); font-size: 12px; letter-spacing: .6px; text-transform: uppercase; white-space: nowrap;
+}
+.home .h-strip-track { flex: 1; min-width: 0; overflow: hidden; }
+.home .h-strip-run { display: flex; gap: var(--f-xs); width: max-content; animation: hstrip 46s linear infinite; }
+.home .h-strip-run span {
+  padding: 7px 16px; border-radius: var(--f-r-pill); white-space: nowrap;
+  font-size: 15px; font-weight: 400; background: rgba(255,255,255,.16);
+}
+@keyframes hstrip { to { transform: translateX(-50%); } }
+
+/* ── 2 · 제품 화면 — 그림자 없이 테두리만 ────────────────────── */
+.home .h-shot { border-radius: var(--f-r-lg); overflow: hidden; background: var(--f-canvas); border: 1px solid var(--f-hairline); }
+.home .h-shot img { display: block; width: 100%; height: auto; }
+
+/* ── 3 · 분할 (라임 블록) ───────────────────────────────────── */
+.home .h-split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 6vw, 96px); align-items: center; }
+.home .h-feats { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--f-xl); }
+.home .h-feats li { display: grid; gap: var(--f-xs); }
+.home .h-feats h3, .home .h-steps h3 { margin: 6px 0 0; font-size: 22px; font-weight: 600; letter-spacing: -.3px; }
+.home .h-feats p, .home .h-steps p { margin: 0; font-size: 16px; font-weight: 330; line-height: 1.6; }
+.home .h-ico { width: 44px; height: 44px; padding: 10px; border-radius: 12px; background: var(--f-canvas); color: var(--f-ink); }
+
+/* ── 4 · 공감 장면 캐러셀 (크림 블록) ─────────────────────────── */
+.home .h-row-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--f-lg); margin-bottom: var(--f-xl); }
+.home .h-arrows { display: flex; gap: var(--f-xs); flex: none; }
+.home .h-arrow {
+  width: 48px; height: 48px; border: 0; border-radius: var(--f-r-full); cursor: pointer;
+  background: var(--f-canvas); color: var(--f-ink); display: grid; place-items: center;
+}
+.home .h-arrow:disabled { opacity: .35; cursor: default; }
+.home .h-arrow:not(:disabled):hover { background: var(--f-surface); }
+
+.home .h-track {
+  display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 2 * var(--f-lg)) / 3);
+  column-gap: var(--f-lg); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  padding-bottom: var(--f-lg);
+}
+.home .h-track::-webkit-scrollbar { display: none; }
+.home .h-scene {
+  margin: 0; scroll-snap-align: start; background: var(--f-canvas); border-radius: var(--f-r-lg);
+  padding: 20px; display: grid; gap: var(--f-md); align-content: start;
+}
+.home .h-scene-top {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--f-surface); border-radius: var(--f-r-md); padding: 12px 14px;
+}
+.home .h-scene-when { font-family: var(--f-mono); font-size: 13px; letter-spacing: .3px; }
+.home .h-scene-kind { font-size: 12px; font-weight: 540; padding: 4px 10px; border-radius: var(--f-r-pill); }
+.home .h-scene[data-kind="인수인계"] .h-scene-kind { background: var(--f-lilac); }
+.home .h-scene[data-kind="공유"] .h-scene-kind     { background: var(--f-mint); }
+.home .h-scene[data-kind="운영"] .h-scene-kind     { background: var(--f-coral); }
+.home .h-bubble {
+  margin: 4px 4px 0; padding: 16px 18px; border-radius: 18px 18px 18px 4px;
+  background: var(--f-ink); color: var(--f-on-primary); font-size: 19px; font-weight: 540; line-height: 1.45; letter-spacing: -.3px;
+  text-wrap: pretty;
+}
+.home .h-scene-text { margin: 0 4px 6px; font-size: 16px; font-weight: 330; line-height: 1.55; }
+.home .h-dots { display: flex; justify-content: center; gap: 8px; }
+.home .h-dots button { width: 9px; height: 9px; padding: 0; border: 0; border-radius: 50%; background: rgba(0,0,0,.2); cursor: pointer; }
+.home .h-dots button.is-on { background: var(--f-ink); transform: scale(1.25); }
+
+/* ── 5 · 진한 띠 (네이비 블록 — 위쪽에서 유일한 어두운 면) ─────── */
+.home .h-facts { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--f-xl); }
+.home .h-facts li { padding-left: var(--f-lg); border-left: 2px solid var(--f-lime); }
+.home .h-facts h3 { margin: 0 0 6px; font-size: clamp(24px, 2.2vw, 30px); font-weight: 700; letter-spacing: -.4px; }
+.home .h-facts p { margin: 0; font-size: 16px; font-weight: 330; line-height: 1.6; }
+.home .h-navy :focus-visible { outline-color: var(--f-inverse-ink); }
+
+/* ── 6 · 시연 + 단계 카드 ─────────────────────────────────────── */
+.home .h-demo-split { display: grid; grid-template-columns: 1.15fr .85fr; gap: var(--f-xxl); align-items: center; }
+.home .h-demo-stage { border-radius: var(--f-r-lg); padding: clamp(28px, 4vw, 56px) clamp(28px, 4vw, 64px); background: var(--f-mint); }
+.home .h-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--f-md); }
+.home .h-steps li {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--f-md); align-items: start;
+  background: var(--f-canvas); border-radius: var(--f-r-lg); padding: 20px 22px; border: 1px solid var(--f-hairline);
+}
+.home .h-steps .h-ico { background: var(--f-surface); }
+.home .h-steps h3 { margin-top: 0; font-size: 20px; }
+.home .h-steps p { margin-top: 6px; }
+
+/* ── 7 · FAQ (라임 블록 — DESIGN: pricing 의 lime FAQ 패널) ──── */
+.home .h-faq { border-top: 1px solid rgba(0,0,0,.16); }
+.home .h-faq details { border-bottom: 1px solid rgba(0,0,0,.16); }
+.home .h-faq summary {
+  list-style: none; cursor: pointer; position: relative;
+  padding: 20px 44px 20px 0; font-size: clamp(17px, 1.5vw, 20px); font-weight: 540; letter-spacing: -.2px;
+}
+.home .h-faq summary::-webkit-details-marker { display: none; }
+.home .h-faq summary::after {
+  content: "+"; position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  font-size: 26px; font-weight: 330; line-height: 1;
+}
+.home .h-faq details[open] summary::after { content: "–"; }
+.home .h-faq details p { margin: 0; padding: 0 40px 20px 0; font-size: 16px; font-weight: 330; line-height: 1.65; }
+.home .h-inline-link { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+
+/* ── 8 · CTA 카드 (검정 면) ───────────────────────────────────── */
+.home .h-final { padding-block: var(--f-section); }
+.home .h-final-card {
+  border-radius: var(--f-r-lg); overflow: hidden; color: var(--f-inverse-ink);
+  background: var(--f-inverse-bg); display: grid; grid-template-columns: 1.1fr .9fr; min-height: 380px;
+}
+.home .h-final-copy { padding: clamp(32px, 5vw, 64px); display: grid; gap: var(--f-md); align-content: center; justify-items: start; }
+.home .h-final-copy h2 { margin: 0; font-size: clamp(28px, 3.2vw, 40px); font-weight: 700; line-height: 1.25; letter-spacing: -.02em; }
+.home .h-final-copy p { margin: 0; font-size: 17px; font-weight: 330; line-height: 1.6; max-width: 44ch; }
+.home .h-final-art { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-content: center; padding: 32px 40px 32px 0; }
+.home .h-note-card { padding: 16px 18px; border-radius: var(--f-r-sm); color: var(--f-ink); font-size: 15px; line-height: 1.45; }
+.home .h-note-card b { display: block; margin-bottom: 4px; font-family: var(--f-mono); font-size: 11px; font-weight: 400; letter-spacing: .5px; }
+.home .h-note-card[data-c="lilac"] { background: var(--f-lilac); transform: rotate(-2deg); }
+.home .h-note-card[data-c="mint"]  { background: var(--f-mint);  transform: rotate(1.5deg) translateY(18px); }
+.home .h-note-card[data-c="lime"]  { background: var(--f-lime);  transform: rotate(1deg); }
+.home .h-note-card[data-c="pink"]  { background: var(--f-pink);  transform: rotate(-1.5deg) translateY(18px); }
+
+/* ── 반응형 ─────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .home .h-track { grid-auto-columns: calc((100% - var(--f-lg)) / 2); }
+}
+@media (max-width: 960px) {
+  .home .h-split, .home .h-demo-split, .home .h-final-card { grid-template-columns: 1fr; }
+  .home .h-final-art { padding: 0 32px 32px; }
+  .home .h-row-head { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 768px) {
+  /* 사이트의 .block 규칙과 같게 — 좁은 화면에서는 색 블록이 가장자리까지 */
+  .home .h-block, .home .h-final-card { border-radius: 0; margin-inline: calc(var(--f-lg) * -1); padding: var(--f-xl) var(--f-lg); }
+  .home .h-final-card { padding: 0; }
+  .home .h-strip { flex-direction: column; align-items: stretch; gap: var(--f-sm); }
+  .home .h-strip-title { padding-left: var(--f-lg); }
+}
+@media (max-width: 640px) {
+  .home .h-track { grid-auto-columns: 86%; }
+  .home .h-cta { width: 100%; }
+  .home .h-cta .h-btn { flex: 1 1 100%; }
+  .home .h-final-art { grid-template-columns: 1fr; }
+  .home .h-note-card { transform: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home .h-strip-run { animation: none; }
+  .home .h-btn:hover { transform: none; }
+}

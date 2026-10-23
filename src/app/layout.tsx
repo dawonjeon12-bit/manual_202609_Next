@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Noto_Sans_KR } from 'next/font/google';
 import '@/styles/tokens.css';
 import '@/styles/typography.css';
 import '@/styles/site.css';
+import '@/styles/home.css';
 import '@/styles/editor.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
