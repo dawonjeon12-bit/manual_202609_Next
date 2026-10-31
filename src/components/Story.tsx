@@ -49,7 +49,7 @@ export function Story() {
   return (
     <section className="h-block-sec">
       <div className="wrap"><div className="h-block h-cream">
-        <div className="h-row-head">
+        <div className="h-row-head" data-reveal="stagger">
           <div className="h-lead">
             <p className="h-eyebrow">SOUND FAMILIAR?</p>
             <h2 className="h-title">이런 순간,<br />한 번쯤 <span className="hl">있으셨죠?</span></h2>
@@ -61,7 +61,7 @@ export function Story() {
           </div>
         </div>
 
-        <div className="h-track" ref={track} onScroll={onScroll} role="list" aria-label="공감 장면">
+        <div className="h-track" ref={track} onScroll={onScroll} role="list" aria-label="공감 장면" data-reveal="stagger">
           {SCENES.map(s => (
             <figure key={s.when} className="h-scene" data-kind={s.kind} role="listitem">
               <div className="h-scene-top">
